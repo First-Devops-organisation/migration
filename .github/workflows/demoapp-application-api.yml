@@ -1,0 +1,217 @@
+name: YASH-DevOps-Serverless/Demoapp-Application-API
+on:
+  push:
+    branches:
+    - develop
+    - release
+    - master
+env:
+  ServiceConnection: Deployment-Connection
+  SubscriptionID: 82e5405d-1f2f-4a92-8f65-19f99d0b6eb4
+jobs:
+  Build-Build:
+    name: Build Job
+    runs-on: ubuntu-latest
+    env:
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - uses: ./.github/actions/devops_build_pipeline
+  Dev-Dev_DemoApp_Deployment:
+    needs:
+    - Build-Build
+    runs-on: ubuntu-latest
+    environment:
+      name: Dev
+    env:
+      Name: BlazorAdmin
+      TargetSlot: ''
+      WebAppName: web-demo-dev
+      resourceGroupName: RG-Serverless-POC
+      slotName: ''
+    if: (success() && github.ref == 'refs/heads/develop') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in sampleservice-BaseUrl sampleservice-Password sampleservice-UserName; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-dev" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_deploy
+  Test-Test_DemoApp_Deployment:
+    needs:
+    - Build-Build
+    runs-on: ubuntu-latest
+    environment:
+      name: Test
+    env:
+      TargetSlot: ''
+      slotName: ''
+    if: (success() && github.ref == 'refs/heads/release') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in test; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-tst" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_deploy
+  UAT_I-UAT_I__DemoApp_Deployment:
+    needs:
+    - Test-Test_DemoApp_Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: UAT_I
+    env:
+      TargetSlot: ''
+      slotName: ''
+    if: (success() && github.ref == 'refs/heads/release') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in test; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-uati" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_deploy
+  UAT_E-UAT_E__DemoApp_Deployment:
+    needs:
+    - Build-Build
+    runs-on: ubuntu-latest
+    environment:
+      name: UAT_E
+    env:
+      TargetSlot: web-demo-uate
+      WebAppName: web-demo-uate
+      slotName: slot1
+    if: (success() && github.ref == 'refs/heads/master') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in sampleservice-BaseUrl sampleservice-Password sampleservice-UserName; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-uate" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_deploymentslot
+  Swap_UAT_E-UAT_E__DemoApp_Deployment:
+    needs:
+    - UAT_E-UAT_E__DemoApp_Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: UAT_E
+    env:
+      TargetSlot: web-demo-uate
+      WebAppName: web-demo-uate
+      slotName: slot1
+    if: (success() && github.ref == 'refs/heads/master') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in sampleservice-BaseUrl sampleservice-Password sampleservice-UserName; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-uate" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_autoswap
+  Prod-Prod__DemoApp_Deployment:
+    needs:
+    - Swap_UAT_E-UAT_E__DemoApp_Deployment
+    runs-on: ubuntu-latest
+    environment:
+      name: Prod
+    env:
+      TargetSlot: ''
+      WebAppName: web-demo-prd
+      slotName: ''
+    if: (success() && github.ref == 'refs/heads/master') && github.RUN_NUMBER == 1
+    steps:
+    - uses: azure/login@v1.6.0
+      with:
+        creds: "${{ secrets.AZURE_CREDENTIALS }}"
+    - name: Get secrets from Azure Key Vault
+      shell: bash
+      run: |-
+        for secret_name in sampleservice-BaseUrl sampleservice-Password sampleservice-UserName; do
+          secret_value=$(az keyvault secret show --vault-name "kv-demoapp-prd" --name $secret_name --query value -o tsv)
+          echo "::add-mask::$secret_value"
+          echo "$secret_name=$secret_value" >> $GITHUB_ENV
+        done
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - name: download artifact
+      uses: actions/download-artifact@v4.1.0
+#     # This action only supports checking out GitHub repositories
+#     - uses: actions/checkout@v4.1.0
+#       with:
+#         repository: YASH-DevOps-Serverless/Azure-DevOpstemplate
+#         ref: refs/heads/master
+    - uses: ./.github/actions/devops_deploy

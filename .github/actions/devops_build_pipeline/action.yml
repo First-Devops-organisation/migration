@@ -1,0 +1,13 @@
+name: DevOps_Build_Pipeline
+runs:
+  using: composite
+  steps:
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_dotnetrestore@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_sonarprepare@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_dotnetbuild@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_sonaranalayse@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_sonarqubepublish@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_dotnettest@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_codecoverage@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_dotnetpublish@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_publishartifacts@main
