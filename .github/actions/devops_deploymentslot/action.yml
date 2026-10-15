@@ -1,0 +1,5 @@
+name: DevOps_Deploymentslot
+runs:
+  using: composite
+  steps:
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/deploy_deploymentslot@main
