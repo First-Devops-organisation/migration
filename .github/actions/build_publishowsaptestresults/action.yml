@@ -1,0 +1,15 @@
+name: Build_PublishOWSAPTestResults
+inputs:
+  reportfolder:
+    required: false
+    default: "$(reportfolder)"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Publish test results
+    if: always()
+    uses: EnricoMi/publish-unit-test-result-action@v2.12.0
+    with:
+      comment_title: OWASP Dependency Check
+      junit_files: "${{ runner.temp }}/${{ env.reportfolder }}/${{ env.report }}.xml"
