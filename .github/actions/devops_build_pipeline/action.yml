@@ -1,0 +1,8 @@
+name: DevOps_Build_Pipeline
+runs:
+  using: composite
+  steps:
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_installtrivy@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_trivyscan@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_publishdevsecopsartifact@main
+  - uses: First-Devops-organisation/reuse-repo/.github/actions/build_publishowsaptestresults@main
