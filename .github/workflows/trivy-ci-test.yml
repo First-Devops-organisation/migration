@@ -1,0 +1,17 @@
+name: migrate/trivy-ci-test
+on:
+  push:
+    branches:
+    - master
+env:
+  imageName: my-custom-app:latest
+  report: UPDATE ME
+  reportfolder: trivy-result
+jobs:
+  Build:
+    name: Build Job
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4.1.0
+    - uses: ./.github/actions/devops_build_pipeline
