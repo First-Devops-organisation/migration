@@ -1,0 +1,29 @@
+name: Build_TrivyScan
+inputs:
+  imageName:
+    required: false
+    default: "$(imageName)"
+    type: string
+  reportfolder:
+    required: false
+    default: "$(reportfolder)"
+    type: string
+  report:
+    required: false
+    default: "$(report)"
+    type: string
+runs:
+  using: composite
+  steps:
+  - name: Build Docker Image
+    run: |-
+      echo "Building Docker image..."
+      docker build -t ${{ env.imageName }} .
+    shell: bash
+  - name: Run Trivy Scan
+    run: |-
+      mkdir -p ${{ runner.temp }}/${{ env.reportfolder }}
+      # trivy image --format json --output ${{ runner.temp }}/trivy-results/trivy-report.sarif --severity HIGH,CRITICAL,MEDIUM,LOW python:3.6-alpine
+      trivy image --scanners vuln,config,secret --format template --template "@template/junit.tpl" --output ${{ runner.temp }}/${{ env.reportfolder }}/${{ env.report }}.xml --severity HIGH,CRITICAL  ${{ env.imageName }}
+      trivy image --scanners vuln,config,secret --format template --template "@template/junit.tpl" --output ${{ runner.temp }}/${{ env.reportfolder }}/${{ env.report }}.xml --severity MEDIUM,LOW  ${{ env.imageName }}
+    shell: bash
